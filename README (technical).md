@@ -24,9 +24,10 @@ Arsitektur, autentikasi, pembaruan, backup/restore, dan registry mirror.
 7. [CPanel System](#cpanel-system)
 8. [Autentikasi dan SSO](#autentikasi-dan-sso)
 9. [Script initial -u](#script-initial--u)
-10. [File Secret](#file-secret)
-11. [Registry Mirror](#registry-mirror)
-12. [Referensi File](#referensi-file)
+10. [Konfigurasi jaringan (CPanel System)](#konfigurasi-jaringan-cpanel-system)
+11. [File Secret](#file-secret)
+12. [Registry Mirror](#registry-mirror)
+13. [Referensi File](#referensi-file)
 
 ---
 
@@ -329,6 +330,7 @@ Session cookie: `cpanel_system_session` (httpOnly, path `/cpanel-system`).
 | Dashboard | `GET /cpanel-system/dashboard`, `GET .../dashboard/status` |
 | Log container | `GET /cpanel-system/logs/:container/json`, `.../stream` (SSE) |
 | Maintenance | `POST /cpanel-system/maintenance`, `POST .../maintenance/restore` |
+| Konfigurasi | `GET/POST /cpanel-system/configuration`, `POST .../configuration/preview`, `POST .../configuration/reset`, `POST .../configuration/certificates` |
 | Job | `GET /cpanel-system/jobs/:id`, `.../json`, `.../stream` |
 | Akun | `GET/POST /cpanel-system/account` |
 
@@ -405,9 +407,120 @@ Implementasi: `speak-hospital-be/apps/services/cpanel_system_sso.service.js`, `_
 | `--include-cpanel-system` | Job dari UI: ikut restart panel |
 | `--skip-internet-check` | Lewati preflight |
 
+Konfigurasi HTTP/HTTPS, domain/IP, dan port nginx dilakukan lewat **CPanel System → Konfigurasi** (`/cpanel-system/configuration`).
+
 ### Volume CPanel System
 
 Volume `codebase_cpanel:/var/www/codebase/` menyimpan kode app. Saat `ensure_cpanel_service` (bukan `--only-restart`): container + volume dihapus, dibuat ulang dari image terbaru.
+
+---
+
+## Konfigurasi jaringan (CPanel System)
+
+Konfigurasi HTTP/HTTPS, domain/IP, port, dan pratinjau nginx dilakukan lewat GUI CPanel System. Menu **Konfigurasi** berada di sidebar **System**, di atas **Pemeliharaan**.
+
+**URL:** `/cpanel-system/configuration` (superadmin untuk mengubah; role lain dapat melihat read-only)
+
+### UI (satu halaman)
+
+Form tunggal: protokol, alamat, port, sertifikat SSL (jika HTTPS), pratinjau, lalu Simpan / Reset / Batal. Log penerapan dan riwayat job tampil di bawah form.
+
+| Elemen | Fungsi |
+|--------|--------|
+| Tombol HTTP / HTTPS / HTTP + HTTPS | Pilih mode protokol |
+| Alamat server | `SERVER_NAME` di `src/.env` (`_` = semua host) |
+| Port HTTP / HTTPS | `PORT` / `SECURE_PORT` di `src/.env` |
+| Kartu **Sertifikat SSL** | Tampil jika HTTPS; upload file `.pem` (disimpan ke `storage/cert/`) |
+| Tombol **Unggah sertifikat** | `POST /configuration/certificates` — simpan file tanpa job penerapan |
+| Tombol **Reset** | `POST /configuration/reset` — `git checkout` `src/server.conf` + `src/docker-compose.yml`; form diisi ulang dari `src/.env`; pratinjau dari file di disk |
+| Tombol **Batal** | Kembali ke Pemeliharaan (konfirmasi modal) |
+| Pratinjau konfigurasi web | `<pre>` readonly; awal dari file `src/server.conf`; saat edit form diperbarui via `POST /configuration/preview` |
+| Panel **Log penerapan** | Polling job `onlyRestart` inline (pola Pemeliharaan) |
+| Simpan | `POST /configuration` → apply + job `initial -u --only-restart` |
+
+Semua aksi ubah (Simpan, Unggah, Reset, Batal) memakai konfirmasi modal. Form dinonaktifkan saat ada job berjalan.
+
+Non-superadmin: halaman dapat dibuka (read-only) dengan peringatan flash; POST ditolak.
+
+### Alur pengguna (UI)
+
+```mermaid
+flowchart TD
+  A[GET /configuration] --> B[Form dari src/.env]
+  A --> C[Pratinjau dari src/server.conf di disk]
+  B --> D[User edit protokol / alamat / port]
+  D --> E[POST /configuration/preview]
+  E --> F[Pratinjau hasil generate di browser]
+  D --> G{HTTPS?}
+  G -->|Ya| H[POST /configuration/certificates]
+  H --> I[storage/cert/ fullchain + privkey]
+  D --> J{Reset?}
+  J -->|Ya| K[POST /configuration/reset]
+  K --> L[git checkout server.conf + docker-compose.yml]
+  L --> B
+  D --> M{POST /configuration Simpan?}
+  M --> N[--network-config-apply]
+  N --> O[Job onlyRestart]
+  O --> P[Log penerapan polling]
+```
+
+| Aksi UI | Route | Efek |
+|---------|-------|------|
+| Buka halaman | `GET /configuration` | Form + pratinjau disk |
+| Edit form | `POST /configuration/preview` | Pratinjau generate (belum tulis file) |
+| Unggah sertifikat | `POST /configuration/certificates` | Tulis `storage/cert/` |
+| Simpan | `POST /configuration` | Apply + job restart |
+| Reset | `POST /configuration/reset` | Checkout file + reload form/pratinjau |
+
+### Alur backend
+
+```mermaid
+sequenceDiagram
+  participant UI as CPanel System UI
+  participant SVC as configuration.service.js
+  participant INIT as bin/initial
+  participant JOB as systemJob.service.js
+
+  UI->>SVC: GET /configuration
+  SVC-->>UI: form dari src/.env, pratinjau dari src/server.conf
+
+  UI->>SVC: POST /configuration/preview (JSON)
+  SVC->>INIT: --network-config-preview (stdin JSON)
+  INIT-->>SVC: generated server.conf text
+  SVC-->>UI: pratinjau hasil generate
+
+  UI->>SVC: POST /configuration/reset
+  SVC->>INIT: --network-config-reset
+  INIT->>INIT: git checkout src/server.conf, src/docker-compose.yml
+  SVC-->>UI: config dari .env + pratinjau file di disk
+
+  UI->>SVC: POST /configuration (form)
+  SVC->>INIT: --network-config-apply (stdin JSON)
+  INIT->>INIT: tulis src/.env, server.conf, docker-compose
+  SVC->>JOB: startSystemUpdateJob(onlyRestart)
+  JOB->>INIT: initial -u --only-restart
+```
+
+### Payload JSON ke `initial`
+
+| Field | Nilai |
+|-------|--------|
+| `protocol` | `http`, `https`, `http_https` |
+| `serverAddress` | IP, domain, atau `_` |
+| `httpPort` | Port HTTP (jika relevan) |
+| `httpsPort` | Port HTTPS (jika relevan) |
+
+### Flag `initial` (konfigurasi jaringan)
+
+| Flag | Efek |
+|------|------|
+| `--network-config-preview` | Generate teks `server.conf` dari JSON stdin (tanpa menulis file) |
+| `--network-config-apply` | Tulis `src/.env`, `server.conf`, patch `docker-compose.yml` |
+| `--network-config-reset` | `git checkout` `src/server.conf` dan `src/docker-compose.yml` |
+
+Fungsi Python di `bin/initial`: `preview_network_configuration()`, `apply_network_configuration()`, `reset_network_configuration()`.
+
+Sertifikat SSL hanya diunggah lewat UI ke `storage/cert/` (`fullchain.pem`, `privkey.pem`). Mode HTTPS memerlukan kedua file sebelum **Simpan**. `src/.env` tidak di-reset oleh tombol Reset (file di-gitignore).
 
 ---
 
@@ -524,6 +637,7 @@ Fungsi: `apply_registry_mirror()` di `bin/initial`. Mode development mengabaikan
 | Nginx | `_speak-hospital-configuration/src/server.conf` |
 | SSO backend | `speak-hospital-be/apps/services/cpanel_system_sso.service.js` |
 | SSO System client | `_speak-hospital-cpanel/services/ssoClient.js` |
+| Konfigurasi jaringan | `_speak-hospital-cpanel/routes/configuration.js`, `services/configuration.service.js`, `middleware/sslCertUpload.js` |
 | System jobs | `_speak-hospital-cpanel/services/systemJob.service.js` |
 | Backup/restore | `_speak-hospital-cpanel/services/recovery.service.js` |
 | Tenant provision | `speak-hospital-be/apps/services/cpanel_tenant.service.js` |

@@ -124,6 +124,7 @@ Admin dapat masuk dengan dua cara:
 | Modul | Fungsi |
 |-------|--------|
 | Dashboard | Status container dan log live (backend, frontend, web server, database, memory) |
+| Konfigurasi | HTTP/HTTPS, domain/IP, port, pratinjau pengaturan web, terapkan ke layanan web |
 | Pemeliharaan | Restart, update Production/Development, backup, restore, pantau job |
 | Akun | Kelola kredensial login lokal (superadmin) |
 | CPanel Center | Tombol kembali ke `/cpanel` tanpa login ulang |
@@ -137,6 +138,7 @@ flowchart TD
   D --> E
   E --> F["Monitor container"]
   E --> G["Pemeliharaan\nupdate / backup / restore"]
+  E --> H["Konfigurasi\nHTTP / HTTPS / domain"]
 ```
 
 ---
@@ -219,7 +221,7 @@ Speak-Hospital mendukung empat level keamanan jaringan. Setiap level menambah la
 | Level | Nama | Ringkasan | Konfigurasi utama |
 |-------|------|-----------|-------------------|
 | 1 | Basic Security | Instalasi dasar, HTTP, IP dynamic | `initial -u` |
-| 2 | Standard Security | HTTPS + sertifikat SSL/TLS, domain/IP tetap | `initial -s` |
+| 2 | Standard Security | HTTPS + sertifikat SSL/TLS, domain/IP tetap | CPanel System → **Konfigurasi** |
 | 3 | Enhanced Security | Level 2 + firewall host (UFW) | UFW rules |
 | 4 | Maximum Security | Level 3 + WireGuard VPN Biznet ↔ Office | WireGuard |
 
@@ -260,7 +262,7 @@ Menambahkan enkripsi HTTPS dan alamat server tetap (domain atau IP static).
 
 1. Selesaikan `initial -u`.
 2. Atur IP Static jika belum (lihat [Konfigurasi IP Address](#konfigurasi-ip-address)).
-3. Jalankan `initial -s` untuk setup domain dan SSL/TLS (lihat [Setup Domain dan SSL/TLS](#setup-domain-dan-ssltls)).
+3. Login **CPanel System** → **Konfigurasi** untuk setup domain dan SSL/TLS (lihat [Setup Domain dan SSL/TLS](#setup-domain-dan-ssltls)).
 
 ### Level 3: Enhanced Security
 
@@ -283,7 +285,7 @@ sudo ufw enable
 sudo ufw status
 ```
 
-Sesuaikan port jika HTTP/HTTPS memakai port kustom dari `initial -s`.
+Sesuaikan port jika HTTP/HTTPS memakai port kustom dari halaman **Konfigurasi** di CPanel System.
 
 WireGuard **belum** diperlukan di level ini.
 
@@ -464,59 +466,95 @@ Tunggu hingga proses restart selesai.
 
 Konfigurasi domain, protokol HTTP/HTTPS, dan sertifikat SSL/TLS dilakukan setelah `initial -u` selesai. Diperlukan untuk **Level 2: Standard Security** ke atas.
 
-Jalankan wizard setup:
+Konfigurasi dilakukan lewat **CPanel System**, bukan terminal.
 
-```bash
-ssh -p 2222 sa@localhost initial -s
+1. Login **CPanel System** (`/cpanel-system`) sebagai superadmin.
+2. Buka menu **System** → **Konfigurasi** (`/cpanel-system/configuration`).
+
+Halaman **Konfigurasi** menampilkan satu form untuk protokol, alamat, port, sertifikat SSL, dan pratinjau sekaligus.
+
+### Alur konfigurasi
+
+```mermaid
+flowchart TD
+  A[Buka Konfigurasi] --> B[Form terisi dari pengaturan tersimpan]
+  B --> C[Pilih protokol]
+  C --> D[Isi alamat dan port]
+  D --> E{HTTPS atau HTTP + HTTPS?}
+  E -->|Ya| F[Unggah sertifikat lengkap dan kunci privat]
+  E -->|Tidak| G[Lihat pratinjau]
+  F --> G
+  G --> H{Pilih aksi}
+  H -->|Unggah sertifikat| I[Simpan file sertifikat ke server]
+  I --> G
+  H -->|Simpan| J[Konfirmasi lalu terapkan perubahan]
+  J --> K[Log penerapan di halaman yang sama]
+  K --> L[Refresh browser setelah selesai]
+  H -->|Reset| M[Kembalikan file tersimpan dan batalkan edit form]
+  M --> G
+  H -->|Batal| N[Kembali ke Pemeliharaan]
 ```
 
-Wizard akan menanyakan:
+| Aksi | File di server | Layanan web |
+|------|----------------|-------------|
+| Edit form / pratinjau | Belum berubah | Belum berubah |
+| Unggah sertifikat | File sertifikat tersimpan | Belum berubah |
+| **Simpan** | Pengaturan ditulis | **Diterapkan** (mulai ulang layanan web) |
+| **Reset** | File konfigurasi web dikembalikan | Belum berubah |
+| Batal | Tidak ada | Tidak ada |
 
-| Pertanyaan | Opsi | Keterangan |
-|------------|------|------------|
-| Protokol | 1. HTTP only | Level 1 |
-| | 2. HTTPS only | Level 2+ |
-| | 3. HTTP + HTTPS (redirect HTTP → HTTPS) | Level 2+ (disarankan) |
-| Server address | IP atau domain | Default `_` (semua host) |
-| HTTP port | 1-65535 | Default 80 |
-| HTTPS port | 1-65535 | Default 443 |
+### Pilihan protokol
+
+| Tombol | Keterangan |
+|--------|------------|
+| **HTTP** | Hanya HTTP (Level 1) |
+| **HTTPS** | Hanya HTTPS (Level 2+) |
+| **HTTP + HTTPS** | Keduanya; HTTP dialihkan ke HTTPS (Level 2+, disarankan) |
+
+### Field dan tombol
+
+| Elemen | Keterangan |
+|--------|------------|
+| Alamat server | IP atau domain. Kosongkan atau isi `_` untuk menerima semua alamat akses |
+| Port HTTP | Default `80` (muncul jika HTTP aktif) |
+| Port HTTPS | Default `443` (muncul jika HTTPS aktif) |
+| Sertifikat SSL | Muncul otomatis jika protokol HTTPS atau HTTP + HTTPS; unggah sertifikat lengkap dan kunci privat |
+| Pratinjau konfigurasi web | Tampilan readonly; saat halaman dibuka menampilkan pengaturan tersimpan; berubah otomatis saat input diubah |
+| **Unggah sertifikat** | Simpan file sertifikat ke server tanpa menerapkan perubahan |
+| **Simpan** | Terapkan konfigurasi dan mulai ulang layanan web (dengan konfirmasi) |
+| **Reset** | Batalkan perubahan yang belum disimpan; kembalikan file konfigurasi web ke salinan tersimpan di server dan muat ulang pratinjau (dengan konfirmasi). Tidak langsung menerapkan ke layanan yang sedang berjalan |
+| **Batal** | Kembali ke Pemeliharaan tanpa menyimpan (dengan konfirmasi) |
+| Log penerapan | Catatan proses penerapan tampil di bawah form |
+
+Klik **Simpan** untuk menerapkan perubahan. Progress tampil di panel **Log penerapan** pada halaman yang sama.
+
+Role selain superadmin dapat **melihat** konfigurasi saat ini (read-only) dengan peringatan di halaman.
 
 ### Sertifikat SSL/TLS
 
-Jika HTTPS dipilih, sertifikat disimpan di:
+Jika HTTPS atau HTTP + HTTPS dipilih, bagian **Sertifikat SSL** muncul di form yang sama:
 
-```
-storage/cert/
-```
+| Unggahan di UI | Keterangan |
+|---------------|------------|
+| **Sertifikat lengkap** | File rantai sertifikat (biasanya `fullchain.pem` dari CA) |
+| **Kunci privat** | File kunci privat (biasanya `privkey.pem` dari CA) |
 
-Struktur yang didukung:
+Klik **Unggah sertifikat** setelah memilih kedua file untuk menyimpan ke server tanpa menerapkan perubahan. Badge **Sertifikat siap** berarti kedua file sudah lengkap di server.
 
-| Path | Keterangan |
-|------|------------|
-| `storage/cert/fullchain.pem` | Sertifikat (full chain) |
-| `storage/cert/privkey.pem` | Private key |
-| `storage/cert/<domain>/fullchain.pem` | Struktur Let's Encrypt per domain |
+Mode HTTPS memerlukan sertifikat lengkap sebelum **Simpan**.
 
-**Transfer sertifikat ke server (SCP):**
+### Contoh alur HTTPS (Level 2)
 
-```bash
-# Fullchain
-scp /path/to/fullchain.pem sa@<server-ip>:/path/to/storage/cert/fullchain.pem
+1. Pilih **HTTPS** atau **HTTP + HTTPS**
+2. Isi domain/IP dan port
+3. **Unggah sertifikat** — tunggu badge **Sertifikat siap**
+4. Periksa **Pratinjau konfigurasi web**
+5. **Simpan** — pantau **Log penerapan** hingga selesai
+6. Refresh browser, lalu uji akses dari browser
 
-# Private key
-scp /path/to/privkey.pem sa@<server-ip>:/path/to/storage/cert/privkey.pem
+### Setelah simpan
 
-# Atau seluruh folder Let's Encrypt
-scp -r /etc/letsencrypt/live/domain.com sa@<server-ip>:/path/to/storage/cert/
-```
-
-Setelah file sertifikat ditransfer, lanjutkan wizard (`Enter` saat diminta).
-
-Sertifikat di-mount ke container nginx sebagai volume read-only: `/etc/ssl/certs:ro`.
-
-### Setelah setup selesai
-
-Wizard menulis konfigurasi ke `src/.env` dan `src/server.conf`, lalu merestart container agar perubahan aktif.
+Sistem menulis pengaturan jaringan ke file konfigurasi di server (`src/.env`, `src/server.conf`, dan penyesuaian `src/docker-compose.yml` jika HTTPS), lalu menjalankan proses penerapan di background (`initial -u --only-restart` sebagai job). Progress tampil di panel **Log penerapan**.
 
 Contoh nilai di `src/.env`:
 
@@ -530,7 +568,7 @@ Contoh nilai di `src/.env`:
 | `SSL_CERT_PATH` | path ke `fullchain.pem` |
 | `SSL_KEY_PATH` | path ke `privkey.pem` |
 
-Jika restart otomatis gagal, jalankan manual:
+Jika proses penerapan otomatis gagal, jalankan manual dari **Pemeliharaan** → **Restart saja**, atau lewat SSH:
 
 ```bash
 initial -u --only-restart
