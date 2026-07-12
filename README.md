@@ -161,13 +161,15 @@ Setelah instalasi awal lewat SSH, **semua pembaruan berikutnya dilakukan melalui
 1. Tim pengembangan menyelesaikan release (merge ke branch production di GitHub).
 2. Login ke **CPanel System**.
 3. Buka halaman **Pemeliharaan**.
-4. Jalankan **Update Production** (atau restart / backup / restore sesuai kebutuhan).
+4. Jalankan **Pembaruan sistem** (atau restart / backup / restore sesuai kebutuhan).
 5. Pantau job hingga selesai.
 
-| Mode | Kapan dipakai |
-|------|---------------|
-| Update Production | Server production - image `:0.4-latest` |
-| Update Development | Uji coba - image `:next-dev-latest` |
+Di UI CPanel System hanya ada **Pembaruan sistem** (production, image `:0.4-latest`). Untuk beralih ke development (`:next-dev-latest`) atau production lewat terminal, gunakan `initial -u`:
+
+```bash
+ssh -p 2222 sa@localhost initial -u --mode-production
+ssh -p 2222 sa@localhost initial -u --mode-development
+```
 
 Secara default, CPanel System tidak ikut di-restart saat update agar proses job tidak terputus. Centang **Termasuk pembaruan CPanel System** jika panel ikut perlu diperbarui.
 

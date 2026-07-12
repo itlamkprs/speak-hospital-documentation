@@ -173,13 +173,20 @@ Script: `_speak-hospital-configuration/bin/initial`.
 `systemJob.service.js` → `initialRunner.js` → `hostInitialRunner.service.js`.
 
 1. Login CPanel System → **Pemeliharaan**.
-2. Pilih **Update Production** atau **Update Development**.
+2. Jalankan **Pembaruan sistem** (selalu `--mode-production` → image `:0.4-latest`).
 3. Pantau job di halaman job / stream SSE.
 
-| Mode UI | Flag setara | Image tag |
-|---------|-------------|-----------|
-| Update Production | `--mode-production` | `:0.4-latest` |
-| Update Development | `--mode-development` | `:next-dev-latest` |
+Mode development tidak tersedia di UI. Switch mode lewat SSH:
+
+```bash
+initial -u --mode-production
+initial -u --mode-development
+```
+
+| Cara | Flag | Image tag |
+|------|------|-----------|
+| UI **Pembaruan sistem** / CLI | `--mode-production` | `:0.4-latest` |
+| CLI saja | `--mode-development` | `:next-dev-latest` |
 
 - `INITIAL_USE_HOST=true`: Alpine chroot ke host, jalankan sebagai user `INITIAL_RUN_AS_USER` (bukan root).
 - Output job: `storage/cpanel-system/jobs/<id>.json`, `<id>.final.json`.
