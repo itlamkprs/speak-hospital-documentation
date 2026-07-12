@@ -119,6 +119,15 @@ Admin dapat masuk dengan dua cara:
 1. Dari CPanel Center melalui menu CPanel System - masuk otomatis tanpa login ulang.
 2. Buka langsung `/cpanel-system` - login dengan kredensial khusus CPanel System.
 
+Kredensial login lokal CPanel System **berbeda** dari akun CPanel Center. Default instalasi: `sa` / `Qwerty123#` (dari `CPANEL_SYSTEM_USERNAME` / `CPANEL_SYSTEM_PASSWORD`).
+
+Jika login langsung ke `/cpanel-system` gagal (password sudah diganti atau tidak diketahui):
+
+1. Login dulu ke **CPanel Center** (`/cpanel`) dengan akun Center (mis. `sa` / `Qwerty123#`).
+2. Buka **CPanel System** dari sidebar/menu Center — masuk otomatis lewat SSO, tanpa password System.
+3. Di CPanel System, buka menu **Akun**, lalu ubah username/password login lokal sesuai kebutuhan.
+4. Setelah itu, login langsung ke `/cpanel-system` bisa memakai kredensial baru tersebut.
+
 ### Modul
 
 | Modul | Fungsi |

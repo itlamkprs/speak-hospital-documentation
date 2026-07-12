@@ -181,7 +181,7 @@ Script: `_speak-hospital-configuration/bin/initial`.
 | Update Production | `--mode-production` | `:0.4-latest` |
 | Update Development | `--mode-development` | `:next-dev-latest` |
 
-- `INITIAL_USE_HOST=true`: Alpine chroot ke host, jalankan sebagai user `sa`.
+- `INITIAL_USE_HOST=true`: Alpine chroot ke host, jalankan sebagai user `INITIAL_RUN_AS_USER` (bukan root).
 - Output job: `storage/cpanel-system/jobs/<id>.json`, `<id>.final.json`.
 
 ### Alur internal `initial -u`
