@@ -585,6 +585,14 @@ Jika proses penerapan otomatis gagal, jalankan manual dari **Pemeliharaan** → 
 initial -u --only-restart
 ```
 
+Jika pemasangan SSL/TLS gagal dan situs tidak bisa diakses (misalnya nginx error sertifikat), kembalikan ke HTTP lalu restart:
+
+```bash
+initial -u --only-reset
+```
+
+Setelah itu akses kembali lewat `http://...`, perbaiki sertifikat di **Konfigurasi**, lalu **Simpan** lagi.
+
 ---
 
 ## WireGuard VPN

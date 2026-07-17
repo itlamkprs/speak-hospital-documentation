@@ -411,6 +411,7 @@ Implementasi: `speak-hospital-be/apps/services/cpanel_system_sso.service.js`, `_
 | `--mode-production` | Image tag `0.4-latest` |
 | `--mode-development` | Image tag `next-dev-latest`; mirror diabaikan |
 | `--only-restart` | Restart tanpa pull/cleanup volume |
+| `--only-reset` | Reset konfigurasi web ke HTTP (`src/.env`, `server.conf`, `docker-compose.yml`), lalu restart container |
 | `--include-cpanel-system` | Job dari UI: ikut restart panel |
 | `--skip-internet-check` | Lewati preflight |
 
@@ -523,11 +524,19 @@ sequenceDiagram
 |------|------|
 | `--network-config-preview` | Generate teks `server.conf` dari JSON stdin (tanpa menulis file) |
 | `--network-config-apply` | Tulis `src/.env`, `server.conf`, patch `docker-compose.yml` |
-| `--network-config-reset` | `git checkout` `src/server.conf` dan `src/docker-compose.yml` |
+| `--network-config-reset` | Reset ke HTTP: `git checkout` `src/server.conf` + `src/docker-compose.yml`, tulis ulang flag jaringan di `src/.env`, hapus mount SSL di compose |
 
 Fungsi Python di `bin/initial`: `preview_network_configuration()`, `apply_network_configuration()`, `reset_network_configuration()`.
 
-Sertifikat SSL hanya diunggah lewat UI ke `storage/cert/` (`fullchain.pem`, `privkey.pem`). Mode HTTPS memerlukan kedua file sebelum **Simpan**. `src/.env` tidak di-reset oleh tombol Reset (file di-gitignore).
+Sertifikat SSL hanya diunggah lewat UI ke `storage/cert/` (`fullchain.pem`, `privkey.pem`). Mode HTTPS memerlukan kedua file sebelum **Simpan**.
+
+Jika pemasangan SSL/TLS gagal dan layanan tidak bisa diakses, pulihkan lewat SSH:
+
+```bash
+initial -u --only-reset
+```
+
+Perintah di atas mengembalikan nginx ke HTTP saja, lalu me-restart container (tanpa pull image).
 
 ---
 
