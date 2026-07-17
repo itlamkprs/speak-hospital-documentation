@@ -520,7 +520,7 @@ flowchart TD
 |--------|------------|
 | **HTTP** | Hanya HTTP (Level 1) |
 | **HTTPS** | Hanya HTTPS (Level 2+) |
-| **HTTP + HTTPS** | Keduanya aktif; port 80 (HTTP) dan 443 (HTTPS) berjalan bersamaan (Level 2+, disarankan) |
+| **HTTP + HTTPS** | Keduanya aktif; port 80 (HTTP) dan 443 (HTTPS) berjalan bersamaan dalam **dua server block nginx terpisah** (Level 2+, disarankan) |
 
 ### Field dan tombol
 
