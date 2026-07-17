@@ -263,7 +263,7 @@ Menambahkan enkripsi HTTPS dan alamat server tetap (domain atau IP static).
 
 | Aspek | Konfigurasi |
 |-------|-------------|
-| Protokol | HTTPS (port 443), opsional redirect HTTP → HTTPS |
+| Protokol | HTTPS (port 443), opsional HTTP + HTTPS (port 80 dan 443) |
 | IP address | **IP Static** disarankan |
 | Sertifikat SSL/TLS | Wajib (`fullchain.pem`, `privkey.pem`) |
 | Domain | Disarankan (mis. `speak.rsud.example.com`) |
@@ -520,7 +520,7 @@ flowchart TD
 |--------|------------|
 | **HTTP** | Hanya HTTP (Level 1) |
 | **HTTPS** | Hanya HTTPS (Level 2+) |
-| **HTTP + HTTPS** | Keduanya; HTTP dialihkan ke HTTPS (Level 2+, disarankan) |
+| **HTTP + HTTPS** | Keduanya aktif; port 80 (HTTP) dan 443 (HTTPS) berjalan bersamaan (Level 2+, disarankan) |
 
 ### Field dan tombol
 
@@ -575,7 +575,7 @@ Contoh nilai di `src/.env`:
 | `PORT` | `80` |
 | `SECURE_PORT` | `443` |
 | `ENABLE_HTTPS` | `true` |
-| `REDIRECT_HTTP_TO_HTTPS` | `true` |
+| `REDIRECT_HTTP_TO_HTTPS` | `false` |
 | `SSL_CERT_PATH` | path ke `fullchain.pem` |
 | `SSL_KEY_PATH` | path ke `privkey.pem` |
 
