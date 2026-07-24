@@ -214,11 +214,14 @@ initial -u --mode-development
 
 | Step | Proses |
 |------|--------|
-| 1 | Insert `cpanel.tenants` (slug, stored, secret) |
+| 1 | Insert `cpanel.tenants` (slug, stored, secret, `verification_code` opsional) |
 | 2 | Folder filestore `public/{stored}` |
 | 3 | Database tenant di MariaDB |
 | 4 | `migrate.js {slug}` |
 | 5 | `seed.js {slug}` |
+| 6 | Bootstrap profil rumah sakit (jika `verification_code` diisi); jika kosong, verifikasi manual di `/hospitals/{slug}` |
+
+**Kode verifikasi** opsional saat create/edit tenant. Jika diisi, bootstrap otomatis dijalankan; jika kosong, admin mengisi verifikasi pertama kali lewat halaman `/hospitals/{slug}`.
 
 Slug: `[a-zA-Z0-9][a-zA-Z0-9_-]*`, unik. URL: `/hospitals/{slug}`.
 
@@ -265,7 +268,9 @@ Nginx (`web_server`) menjadi reverse proxy:
 
 | Path | Container | Keterangan |
 |------|-----------|------------|
-| `/cpanel` | `codebase_frontend` | React SPA (client routing) |
+| `/` | `codebase_frontend` | Halaman sambutan SPEAK HOSPITAL |
+| `/cpanel` | `codebase_frontend` | React SPA — login dan modul CPanel Center |
+| `/hospitals/*` | `codebase_frontend` | React SPA — aplikasi rumah sakit per tenant |
 | `/api/*` | `codebase_backend` | Backend API |
 | `/cpanel-system/*` | `codebase_cpanel` | Express + EJS |
 
@@ -274,7 +279,9 @@ MariaDB (`database_mysql`) dan Redis (`memory`) dipakai untuk data aplikasi, sch
 ```mermaid
 flowchart LR
   B["Browser"] --> N["web_server\nnginx"]
-  N -->|"/cpanel"| FE["codebase_frontend"]
+  N -->|"/"| FE["codebase_frontend"]
+  N -->|"/cpanel"| FE
+  N -->|"/hospitals/*"| FE
   N -->|"/api/*"| BE["codebase_backend"]
   N -->|"/cpanel-system/*"| CP["codebase_cpanel"]
   FE --> BE
@@ -299,7 +306,7 @@ flowchart LR
 
 ## CPanel Center
 
-React SPA. Route: `speak-hospital-fe/src/config/routes/cpanel.js`.
+React SPA. Route utama: `speak-hospital-fe/src/config/routes/index.js` (landing `/`, login `/cpanel`, modul di `cpanel.js`). Aplikasi rumah sakit: `hospital.js` pada `/hospitals/:slugId/*`.
 
 Autentikasi: JWT di `localStorage` (`token-cpanel`, `central-user`). Request API: prefix `/api/cpanel/*`, header `Authorization: Bearer`.
 

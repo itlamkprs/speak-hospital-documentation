@@ -33,6 +33,8 @@ Alur instalasi, panel administrasi, tenant, dan pembaruan sistem.
 
 Speak-Hospital menyediakan dua antarmuka administrasi yang saling terhubung.
 
+**Halaman utama** (`/`) menampilkan halaman sambutan SPEAK HOSPITAL (informasi platform). Untuk masuk ke panel administrasi, buka **`/cpanel`**.
+
 **CPanel Center** (`/cpanel`) digunakan untuk pengelolaan administratif: tenant, pengguna, log aktivitas, dan notifikasi.
 
 **CPanel System** (`/cpanel-system`) digunakan untuk pengelolaan operasional server: pemantauan container, pembaruan aplikasi, restart layanan, backup, dan restore.
@@ -76,7 +78,12 @@ flowchart LR
 
 ## CPanel Center
 
-Setelah instalasi selesai, buka browser dan akses **`/cpanel`**.
+Setelah instalasi selesai, buka browser:
+
+- **`/`** — halaman sambutan SPEAK HOSPITAL (informasi platform)
+- **`/cpanel`** — login CPanel Center (administrasi tenant dan pengguna)
+
+Untuk masuk ke panel administrasi, akses **`/cpanel`**.
 
 | Item | Nilai |
 |------|-------|
@@ -190,8 +197,9 @@ flowchart LR
 1. Login ke CPanel Center.
 2. Buka menu **Tenant** → **Tambah Tenant**.
 3. Isi **slug** (contoh: `rsud-jakarta`) dan **deskripsi**.
-4. Simpan - sistem menjalankan job pembuatan otomatis.
-5. Pantau job hingga selesai (notifikasi atau halaman job).
+4. **Kode verifikasi** (opsional) — jika dikosongkan, verifikasi pertama kali dilakukan manual di `/hospitals/{slug}` saat tenant pertama kali dibuka.
+5. Simpan - sistem menjalankan job pembuatan otomatis.
+6. Pantau job hingga selesai (notifikasi atau halaman job).
 
 ### Mengunjungi tenant
 
