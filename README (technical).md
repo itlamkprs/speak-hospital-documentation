@@ -344,6 +344,7 @@ Session cookie: `cpanel_system_session` (httpOnly, path `/cpanel-system`).
 | Dashboard | `GET /cpanel-system/dashboard`, `GET .../dashboard/status` |
 | Log container | `GET /cpanel-system/logs/:container/json`, `.../stream` (SSE) |
 | Maintenance | `POST /cpanel-system/maintenance`, `POST .../maintenance/restore` |
+| Keamanan | `GET/POST /cpanel-system/security` |
 | Konfigurasi | `GET/POST /cpanel-system/configuration`, `POST .../configuration/preview`, `POST .../configuration/reset`, `POST .../configuration/certificates` |
 | Job | `GET /cpanel-system/jobs/:id`, `.../json`, `.../stream` |
 | Akun | `GET/POST /cpanel-system/account` |
@@ -427,6 +428,37 @@ Konfigurasi HTTP/HTTPS, domain/IP, dan port nginx dilakukan lewat **CPanel Syste
 ### Volume CPanel System
 
 Volume `codebase_cpanel:/var/www/codebase/` menyimpan kode app. Saat `ensure_cpanel_service` (bukan `--only-restart`): container + volume dihapus, dibuat ulang dari image terbaru.
+
+---
+
+## Keamanan IP (CPanel System)
+
+Menu **Keamanan** berada di sidebar **System**, di atas **Konfigurasi**.
+
+**URL:** `/cpanel-system/security` (superadmin untuk mengubah; role lain read-only)
+
+| Elemen | Fungsi |
+|--------|--------|
+| Toggle **Proteksi CPanel dan CPanel System** | Aktif/nonaktif pembatasan IP |
+| Whitelist IP | Satu IP atau CIDR per baris |
+| Simpan | Tulis `src/.env` + `bin/initial --security-config-apply` + job `only-restart` |
+
+**Env vars** di `src/.env`:
+
+| Variabel | Keterangan |
+|----------|------------|
+| `CPANEL_IP_PROTECTION_ENABLED` | `true` / `false` |
+| `CPANEL_ALLOWED_IPS` | Daftar IP/CIDR dipisah koma |
+
+**Path yang dilindungi (nginx `allow`/`deny`):**
+
+- `/cpanel` (termasuk `/cpanel/dashboard`, `/cpanel/sso`, dll.)
+- `/cpanel-system`
+- `/api/cpanel/*`
+
+Path lain (`/`, `/hospitals/*`, API non-cpanel) tidak terpengaruh.
+
+Saat mengaktifkan proteksi, IP admin saat ini harus ada di whitelist (cegah lockout). Jika terkunci, edit `src/.env` via SSH atau jalankan `initial -u --only-reset`.
 
 ---
 
