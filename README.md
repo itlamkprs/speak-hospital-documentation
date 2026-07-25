@@ -140,8 +140,8 @@ Jika login langsung ke `/cpanel-system` gagal (password sudah diganti atau tidak
 | Modul | Fungsi |
 |-------|--------|
 | Dashboard | Status container dan log live (backend, frontend, web server, database, memory) |
-| Keamanan | Proteksi IP untuk `/cpanel`, `/cpanel-system`, dan `/api/cpanel/*` |
 | Konfigurasi | HTTP/HTTPS, domain/IP, port, pratinjau pengaturan web, terapkan ke layanan web |
+| Keamanan | Proteksi IP untuk `/cpanel`, `/cpanel-system`, dan `/api/cpanel/*` |
 | Pemeliharaan | Restart, update Production/Development, backup, restore, pantau job |
 | Akun | Kelola kredensial login lokal (superadmin) |
 | CPanel Center | Tombol kembali ke `/cpanel` tanpa login ulang |

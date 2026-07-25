@@ -344,8 +344,8 @@ Session cookie: `cpanel_system_session` (httpOnly, path `/cpanel-system`).
 | Dashboard | `GET /cpanel-system/dashboard`, `GET .../dashboard/status` |
 | Log container | `GET /cpanel-system/logs/:container/json`, `.../stream` (SSE) |
 | Maintenance | `POST /cpanel-system/maintenance`, `POST .../maintenance/restore` |
-| Keamanan | `GET/POST /cpanel-system/security` |
 | Konfigurasi | `GET/POST /cpanel-system/configuration`, `POST .../configuration/preview`, `POST .../configuration/reset`, `POST .../configuration/certificates` |
+| Keamanan | `GET/POST /cpanel-system/security` |
 | Job | `GET /cpanel-system/jobs/:id`, `.../json`, `.../stream` |
 | Akun | `GET/POST /cpanel-system/account` |
 
@@ -433,7 +433,7 @@ Volume `codebase_cpanel:/var/www/codebase/` menyimpan kode app. Saat `ensure_cpa
 
 ## Keamanan IP (CPanel System)
 
-Menu **Keamanan** berada di sidebar **System**, di atas **Konfigurasi**.
+Menu **Keamanan** berada di sidebar **System**, di antara **Konfigurasi** dan **Pemeliharaan**.
 
 **URL:** `/cpanel-system/security` (superadmin untuk mengubah; role lain read-only)
 
