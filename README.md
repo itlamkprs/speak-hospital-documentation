@@ -33,7 +33,7 @@ Alur instalasi, panel administrasi, tenant, dan pembaruan sistem.
 
 Speak-Hospital menyediakan dua antarmuka administrasi yang saling terhubung.
 
-**Halaman utama** (`/`) menampilkan halaman sambutan SPEAK HOSPITAL (informasi platform). Untuk masuk ke panel administrasi, buka **`/cpanel`**.
+**Halaman utama** (`/`) menampilkan halaman sambutan SPEAK HOSPITAL (informasi platform) jika tidak ada default tenant yang diatur. Jika terdapat tenant yang diaktifkan sebagai default tenant, akses ke `/` akan secara otomatis dialihkan (redirect) ke alamat `/hospitals/{slug}` milik tenant tersebut. Untuk masuk ke panel administrasi, buka **`/cpanel`**.
 
 **CPanel Center** (`/cpanel`) digunakan untuk pengelolaan administratif: tenant, pengguna, log aktivitas, dan notifikasi.
 
@@ -80,7 +80,7 @@ flowchart LR
 
 Setelah instalasi selesai, buka browser:
 
-- **`/`** — halaman sambutan SPEAK HOSPITAL (informasi platform)
+- **`/`** — halaman sambutan SPEAK HOSPITAL (atau pengalihan ke tenant default jika dikonfigurasi)
 - **`/cpanel`** — login CPanel Center (administrasi tenant dan pengguna)
 
 Untuk masuk ke panel administrasi, akses **`/cpanel`**.
@@ -98,7 +98,7 @@ Setelah login berhasil, admin diarahkan ke dashboard CPanel Center.
 | Modul | Fungsi |
 |-------|--------|
 | Dashboard | Ringkasan kondisi sistem |
-| Tenant | Buat, ubah, hapus, import, export tenant; setiap tenant di `/hospitals/{slug}` |
+| Tenant | Kelola tenant (buat, ubah, hapus, impor, ekspor) serta pengaturan default tenant (on/off) untuk pengalihan halaman utama; setiap tenant di `/hospitals/{slug}` |
 | User | Kelola pengguna CPanel Center dan pengguna rumah sakit per tenant |
 | Log | Riwayat aktivitas administratif |
 | Notifikasi | Status job dan peristiwa penting |
@@ -211,6 +211,9 @@ http://alamat-server/hospitals/{slug}
 ```
 
 Contoh: `http://192.168.1.100/hospitals/rsud-jakarta`
+
+**Default Tenant & Pengalihan Otomatis:**
+Jika suatu tenant ditandai sebagai **Default Tenant** melalui tombol toggle di daftar tenant CPanel Center, maka setiap akses langsung ke root path (`http://alamat-server/`) akan secara otomatis dialihkan (redirect) ke `http://alamat-server/hospitals/{slug}` milik tenant tersebut. Hanya diperbolehkan maksimal satu default tenant aktif (atau tidak ada sama sekali).
 
 Pengguna rumah sakit login dengan akun tenant yang dibuat lewat menu **User** di CPanel Center.
 
